@@ -46,8 +46,11 @@ def api_connect():
     if assistant_thread is None:
         assistant_thread = socketio.start_background_task(target=start_assistant)
         print("Started")
+    else:
+        emit('assistant_ready')
 
     print('Client connected')
+
 
 @socketio.on('disconnect')
 def api_disconnect():
@@ -62,7 +65,9 @@ def process_event (event):
         'type': event.type.name,
         'args': event.args });
 
+    # Let client know assistant is ready
     if event.type == EventType.ON_START_FINISHED:
+        socketio.emit('assistant_ready')
         print ("Assistant started")
 
 # Starts Google assistant on current thread with the passed in callback function
