@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="js/socket.io.slim.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <title>Assistant</title>
+<style type="text/css">
+#conversations{
+  width: 600px;
+  height: 100%;
+  margin: 0px, auto, 0px auto;
+}
+
+#me, #assistant {
+  width: 100%;
+  text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div id="conversations">
+  <div id="assistant">Assistant</div>
+  <div id="me">Me</div>
+</div>
+
+<script type="text/javascript">
+var socket = io.connect();
+socket.on('connect', function() {
+  console.log("Connected");
+});
+$(document).ready(function() {
+    console.log("Ready");
+    socket.on('assistant_event', function(data) {
+        console.log("Event", data);
+        if (data.type == "ON_RECOGNIZING_SPEECH_FINISHED") {
+            $("#me").html(data.args.text);
+        } else if (data.type == "ON_RESPONDING_STARTED") {
+            $("#assistant").html(data.args.text);
+        }
+    });
+$  
+});
+</script>
+</body>
+</html>
+
