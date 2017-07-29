@@ -42,15 +42,7 @@ def serve_js(path):
 def api_connect():
     global assistant_thread
 
-    # Start assistant thread if it isn't already. This is stupid but the only way to 
-    # emit messages from another thread
-    if assistant_thread is None:
-        assistant_thread = AssistantThread()
-        assistant_thread.setEventCallback(process_event)
-        assistant_thread.setDaemon(True)
-        assistant_thread.start()
-        print("Started")
-    else:
+    if assistant_thread.isStarted():
         emit('assistant_ready')
 
     print('Client connected')
@@ -82,6 +74,13 @@ def process_event (event):
 
 if __name__ == '__main__':
     
+    # Start assistant thread 
+    assistant_thread = AssistantThread()
+    assistant_thread.setEventCallback(process_event)
+    assistant_thread.setDaemon(True)
+    assistant_thread.start()
+    print("Starting Assistant...")
+
     # Start web server and Socket.io
     socketio.run(app, host="0.0.0.0", port=5000)
 

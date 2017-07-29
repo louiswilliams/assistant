@@ -14,6 +14,7 @@ class AssistantThread(Thread):
 
     _assistant = None
     _eventCallback = None
+    _started = False
 
     # Starts Google assistant on current thread with the passed in callback function
     def run(self):
@@ -29,10 +30,15 @@ class AssistantThread(Thread):
             self._assistant = assistant
             for event in assistant.start():
                 if self._eventCallback:
+                    if event.type == EventType.ON_START_FINISHED:
+                        self._started = True
                     self._eventCallback(event)
 
     def setEventCallback(self, callback):
         self._eventCallback = callback
+
+    def isStarted(self):
+        return self._started
 
     def assistant(self):
         return self._assistant

@@ -22,35 +22,6 @@ socket.on('connect', function() {
   console.log("Connected");
 });
 
-function pulse($element, duration, toColor) {
-  var factor = 1.25;
-  var start = {
-    'height': $element.height(),
-    'width': $element.width(),
-    'marginTop': parseInt($element.css("marginTop")),
-    'marginLeft': parseInt($element.css("marginLeft")),
-    'backgroundColor': $element.css("backgroundColor")
-  };
-  var color = (toColor) ? toColor : start.backgroundColor;
-  $element
-      .css("backgroundColor", toColor)
-      .animate({
-    'height': start.height * factor,
-    'width': start.width * factor,
-    'marginLeft': (start.marginLeft - (start.width * (factor-1) / 2)) + "px",
-    'marginTop': (start.marginTop - (start.height * (factor-1) / 2)) + "px"
-//    'marginLeft': "0px",
-//    'marginTop': "0px"
-  }, duration * (0.25), 'easeOutSine', function () {
-      $element.animate({
-          'height': start.height,
-          'width': start.width,
-          'marginLeft': start.marginLeft,
-          'marginTop': start.marginTop
-      }, duration * (0.75), 'easeOutSine');
-  });
-}
-
 $(document).ready(function() {
    
     var statusUnavailable = "rgb(214, 93, 65)";
@@ -58,14 +29,21 @@ $(document).ready(function() {
     var statusRecognizing = "rgb(91, 199, 243)";
     $dot = $("#dot");
 
+    var dotStart = {
+      'height': $dot.height(),
+      'width': $dot.width(),
+      'marginTop': parseInt($dot.css("marginTop")),
+      'marginLeft': parseInt($dot.css("marginLeft")),
+      'backgroundColor': $dot.css("backgroundColor")
+    };
     // Show that the client is not connected
     socket.on('disconnect', function() {
-        pulse($dot, 2000, statusUnavailable);
+        $dot.pulse(dotStart, 2000, statusUnavailable);
     });
 
    // Let user know assistant is ready 
     socket.on('assistant_ready', function() {
-        pulse($dot, 1000, statusReady);
+        $dot.pulse(dotStart, 1000, statusReady);
     });
    
    // Handle assistant events 
@@ -74,18 +52,39 @@ $(document).ready(function() {
 
         // Display recognized speech query
         if (data.type == "ON_RECOGNIZING_SPEECH_FINISHED" ||
-            data.type = "ON_CONVERSATION_TURN_TIMEOUT") {
-            pulse($dot, 1000, statusReady);
+            data.type == "ON_CONVERSATION_TURN_TIMEOUT") {
+            $dot.pulse(dotStart, 1000, statusReady);
             $("#me").html("\"" + data.args.text + "\"");
 
         // Display Assistant response (this is actually empty)
         } else if (data.type == "ON_CONVERSATION_TURN_STARTED") {
-            pulse($dot, 1000, statusRecognizing);
+            $dot.pulse(dotStart, 1000, statusRecognizing);
         }
     });
 
+    $.fn.pulse = function (start, duration, toColor) {
+     var factor = 1.25;
+     var color = (toColor) ? toColor : start.backgroundColor;
+     $(this)
+          .css("backgroundColor", toColor)
+          .animate({
+        'height': start.height * factor,
+        'width': start.width * factor,
+        'marginLeft': (start.marginLeft - (start.width * (factor-1) / 2)) + "px",
+        'marginTop': (start.marginTop - (start.height * (factor-1) / 2)) + "px"
+      }, duration * (0.25), 'easeOutSine', function () {
+          $(this).animate({
+              'height': start.height,
+              'width': start.width,
+              'marginLeft': start.marginLeft,
+              'marginTop': start.marginTop
+          }, duration * (0.75), 'easeOutSine');
+      });
+      return this;
+    }
+
     $dot.click(function () {
-        pulse($dot, 1000);
+        $dot.pulse(dotStart, 1000);
         socket.emit('assistant_trigger')
     });
 });
