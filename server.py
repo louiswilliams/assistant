@@ -10,6 +10,7 @@ import json
 import math
 import os.path
 
+from assistant_thread import AssistantThread
 from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO, emit
 from gevent import monkey
@@ -44,13 +45,21 @@ def api_connect():
     # Start assistant thread if it isn't already. This is stupid but the only way to 
     # emit messages from another thread
     if assistant_thread is None:
-        assistant_thread = socketio.start_background_task(target=start_assistant)
+        assistant_thread = AssistantThread()
+        assistant_thread.setEventCallback(process_event)
+        assistant_thread.setDaemon(True)
+        assistant_thread.start()
         print("Started")
     else:
         emit('assistant_ready')
 
     print('Client connected')
 
+@socketio.on('assistant_trigger')
+def api_trigger():
+
+    print ("Assistant triggered, starting conversation")
+    assistant_thread.assistant().start_conversation()
 
 @socketio.on('disconnect')
 def api_disconnect():
@@ -70,29 +79,9 @@ def process_event (event):
         socketio.emit('assistant_ready')
         print ("Assistant started")
 
-# Starts Google assistant on current thread with the passed in callback function
-def start_assistant(callback=process_event, credentials_path=None):
-    if not credentials_path:
-        credentials_path = default=os.path.join(
-            os.path.expanduser('~/.config'),
-            'google-oauthlib-tool',
-            'credentials.json')
-
-    with open(credentials_path, 'r') as f:
-        credentials = google.oauth2.credentials.Credentials(token=None, **json.load(f))
-
-    with Assistant(credentials) as assistant:
-        for event in assistant.start():
-            callback(event)
-
 
 if __name__ == '__main__':
     
-    # Start assistant thread
-    # assistant = Thread(target = start_assistant, args = (process_event, ))
-    # assistant.setDaemon(True)
-    # assistant.start()
-
     # Start web server and Socket.io
     socketio.run(app, host="0.0.0.0", port=5000)
 

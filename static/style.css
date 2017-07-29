@@ -32,11 +32,25 @@ body {
  }
 
 #dot {
- height: 150px;
- width: 150px;
- margin: 25px;
+ height: 100px;
+ width: 100px;
+ margin: 50px;
  border-radius: 100px;
   background-color: rgb(214, 93, 65);
   transition:background 0.25s linear;
   -webkit-transition:background 0.25s linear;
-} 
+}
+
+#dot:hover {
+  cursor: pointer;
+}
+
+#dot i {
+color: white;
+top: 50%;
+position: absolute;
+left: 50%;
+font-size: 50px;
+margin-left: -16px;
+margin-top: -7px;
+}

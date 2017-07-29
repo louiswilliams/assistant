@@ -3,15 +3,16 @@
 <head>
     <script src="js/socket.io.slim.js"></script>
     <script src="js/jquery.min.js"></script>
-    <script src="js/jquery-ui/jquery-ui.min.js"></script>
+    <script src="static/jquery-ui/jquery-ui.min.js"></script>
     <title>Assistant</title>
     <link rel="stylesheet" type="text/css" href="static/style.css"></link>
+    <link rel="stylesheet" href="static/font-awesome/css/font-awesome.min.css"/>
 </head>
 <body>
 <div id="conversations">
-    <div id="me">Me</div>
+    <div id="me">Say "Ok Google"</div>
     <div id="indicator">
-        <div id="dot"></div>
+        <div id="dot"><i class="fa fa-microphone"></i></div>
     </div>
 </div>
 
@@ -22,7 +23,7 @@ socket.on('connect', function() {
 });
 
 function pulse($element, duration, toColor) {
-  var factor = 4/3;
+  var factor = 1.25;
   var start = {
     'height': $element.height(),
     'width': $element.width(),
@@ -31,33 +32,40 @@ function pulse($element, duration, toColor) {
     'backgroundColor': $element.css("backgroundColor")
   };
   var color = (toColor) ? toColor : start.backgroundColor;
-  console.log(color);
   $element
       .css("backgroundColor", toColor)
       .animate({
     'height': start.height * factor,
     'width': start.width * factor,
-//    'marginLeft': (start.marginLeft - (start.width * (factor-1) / 2)) + "px",
-//    'marginTop': (start.marginTop - (start.height * (factor-1) / 2)) + "px"
-    'marginLeft': "0px",
-    'marginTop': "0px"
-  }, duration * (0.2), 'swing', function () {
-      console.log("Out");
+    'marginLeft': (start.marginLeft - (start.width * (factor-1) / 2)) + "px",
+    'marginTop': (start.marginTop - (start.height * (factor-1) / 2)) + "px"
+//    'marginLeft': "0px",
+//    'marginTop': "0px"
+  }, duration * (0.25), 'easeOutSine', function () {
       $element.animate({
           'height': start.height,
           'width': start.width,
           'marginLeft': start.marginLeft,
           'marginTop': start.marginTop
-      }, duration * (0.8), 'swing', function() { console.log("in")});
+      }, duration * (0.75), 'easeOutSine');
   });
 }
 
 $(document).ready(function() {
    
+    var statusUnavailable = "rgb(214, 93, 65)";
+    var statusReady = "rgb(83, 220, 113)";
+    var statusRecognizing = "rgb(91, 199, 243)";
+    $dot = $("#dot");
+
+    // Show that the client is not connected
+    socket.on('disconnect', function() {
+        pulse($dot, 2000, statusUnavailable);
+    });
+
    // Let user know assistant is ready 
     socket.on('assistant_ready', function() {
-//        $("#indicator").css("background-color","rgb(104, 218, 176)");
-        pulse($("#dot"), 1000, "rgb(104, 218, 176)");
+        pulse($dot, 1000, statusReady);
     });
    
    // Handle assistant events 
@@ -65,15 +73,21 @@ $(document).ready(function() {
         console.log("Event", data);
 
         // Display recognized speech query
-        if (data.type == "ON_RECOGNIZING_SPEECH_FINISHED") {
-            $("#me").html(data.args.text);
+        if (data.type == "ON_RECOGNIZING_SPEECH_FINISHED" ||
+            data.type = "ON_CONVERSATION_TURN_TIMEOUT") {
+            pulse($dot, 1000, statusReady);
+            $("#me").html("\"" + data.args.text + "\"");
 
         // Display Assistant response (this is actually empty)
-        } else if (data.type == "ON_RESPONDING_STARTED") {
-            $("#assistant").html(data.args.text);
+        } else if (data.type == "ON_CONVERSATION_TURN_STARTED") {
+            pulse($dot, 1000, statusRecognizing);
         }
     });
-$  
+
+    $dot.click(function () {
+        pulse($dot, 1000);
+        socket.emit('assistant_trigger')
+    });
 });
 </script>
 </body>
